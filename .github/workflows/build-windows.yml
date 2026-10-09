@@ -43,11 +43,6 @@ jobs:
 
       - name: Build Aether
         shell: pwsh
-        run: |
-          cargo build --manifest-path "$env:AETHER_PROJECT_DIR\Cargo.toml" --release --target x86_64-pc-windows-msvc
-
-      - name: Build Aether
-        shell: pwsh
         run: cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Check MASQUE SNI support
