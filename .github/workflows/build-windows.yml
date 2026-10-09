@@ -24,22 +24,19 @@ jobs:
         uses: lukka/get-cmake@latest
 
 
-      - name: Locate Cargo.toml
+      - name: Build Aether
         shell: pwsh
         run: |
-          $cargo = Get-ChildItem -Path . -Filter Cargo.toml -Recurse |
-            Where-Object { $_.FullName -notmatch '\\target\\' } |
-            Select-Object -First 1
+          git submodule update --init --recursive
+          rustc --version
+          cargo build --manifest-path aether/Cargo.toml --release --target x86_64-pc-windows-msvc
 
-          if (!$cargo) {
-            throw "Cargo.toml not found in repository"
-          }
-
-          $env:AETHER_PROJECT_DIR = $cargo.Directory.FullName
-          "AETHER_PROJECT_DIR=$($cargo.Directory.FullName)" |
-            Out-File -FilePath $env:GITHUB_ENV -Append
-
-          Write-Host "Found project: $($cargo.Directory.FullName)"
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: aether-windows-masque-sni
+          path: aether/target/x86_64-pc-windows-msvc/release/aether.exe
+          if-no-files-found: error
 
       - name: Build Aether
         shell: pwsh
