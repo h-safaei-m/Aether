@@ -1,0 +1,53 @@
+
+name: Build Aether for Windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Build Aether
+        shell: pwsh
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Check MASQUE SNI support
+        shell: pwsh
+        run: |
+          $exe = "target\x86_64-pc-windows-msvc\release\aether.exe"
+          if (!(Test-Path $exe)) {
+            $exe = "target\release\aether.exe"
+          }
+          if (!(Test-Path $exe)) {
+            throw "aether.exe was not generated"
+          }
+          & $exe --help 2>&1 | Out-File help.txt
+          Get-Content help.txt
+          if (!(Select-String -Path help.txt -Pattern "masque-sni")) {
+            throw "This source version does not expose --masque-sni"
+          }
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: aether-windows-masque-sni
+          path: |
+            target/x86_64-pc-windows-msvc/release/aether.exe
+            target/release/aether.exe
+          if-no-files-found: ignore
