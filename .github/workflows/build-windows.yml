@@ -23,6 +23,29 @@ jobs:
       - name: Install CMake
         uses: lukka/get-cmake@latest
 
+
+      - name: Locate Cargo.toml
+        shell: pwsh
+        run: |
+          $cargo = Get-ChildItem -Path . -Filter Cargo.toml -Recurse |
+            Where-Object { $_.FullName -notmatch '\\target\\' } |
+            Select-Object -First 1
+
+          if (!$cargo) {
+            throw "Cargo.toml not found in repository"
+          }
+
+          $env:AETHER_PROJECT_DIR = $cargo.Directory.FullName
+          "AETHER_PROJECT_DIR=$($cargo.Directory.FullName)" |
+            Out-File -FilePath $env:GITHUB_ENV -Append
+
+          Write-Host "Found project: $($cargo.Directory.FullName)"
+
+      - name: Build Aether
+        shell: pwsh
+        run: |
+          cargo build --manifest-path "$env:AETHER_PROJECT_DIR\Cargo.toml" --release --target x86_64-pc-windows-msvc
+
       - name: Build Aether
         shell: pwsh
         run: cargo build --release --target x86_64-pc-windows-msvc
